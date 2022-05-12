@@ -13,8 +13,9 @@ const step = 20;
 var stepX = 0;
 var distance = 80;
 const padding = 100;
-const nPoint = 8;
+const nPoint = 10;
 const radius = 5;
+const shapePadding = 3;
 
 var pointer;
 
@@ -30,50 +31,21 @@ function setup() {
   ortho(-width/2, width/2, -height/2, height/2, -3000, +3000)
   textFont(inconsolata);
   textSize(32);
-  // put setup code here
-
-  button1 = createButton('state 1');
-  button1.position(0, 0);
-  button1.mousePressed(function() {
-    frameCount = 0;
-    state = 1;
-  });
-
-  button2 = createButton('state 2');
-  button2.position(100, 0);
-  button2.mousePressed(function() {
-    frameCount = 0;
-    state = 2;
-  });
-
-  button3 = createButton('state 3');
-  button3.position(200, 0);
-  button3.mousePressed(function() {
-    frameCount = 0;
-    state = 3;
-  });
-
-  button4 = createButton('state 4');
-  button4.position(300, 0);
-  button4.mousePressed(function() {
-    frameCount = 0;
-    state = 4;
-  });
 
   pointer = new Point(0,0)
 
   let gridWidth = width - padding*2;
   let gridHeight = height - padding*2;
   distance = gridHeight / (step - 1);
-  stepx = round(gridWidth / distance + 1) - 1;
+  stepX = round(gridWidth / distance + 1) - 1;
 
 
-  for (var i = -stepx/2; i <= stepx/2; i++) {
+  for (var i = -stepX/2; i <= stepX/2; i++) {
     for (var j = -step/2; j <= step/2; j++) {
       var time = i+j+step;
       var g = new GridPoint(i*distance, j*distance, 0, time);
       grid.push(g)
-      for (var k = -stepx/2; k <= stepx/2; k++) {
+      for (var k = -stepX/2; k <= stepX/2; k++) {
         var point = new GridPoint(i*distance, j*distance, k*distance, i+j);
         gridPoints.push(point);
       }
@@ -97,17 +69,6 @@ function draw() {
 
   pointer.update(locX, locY);
 
-  //orbitControl();
-  // beginShape(POINTS);
-  // for (var i = 0; i < grid.length; i++) {
-  //   push()
-  //   translate(0,0,-4*80)
-  //
-  //   grid[i].display();
-  //
-  //   pop()
-  // }
-  // endShape();
   if (state == 1) {
     anim1_grid();
   }else if (state == 2) {
@@ -116,53 +77,6 @@ function draw() {
     anim3_lines();
   }else if (state == 4) {
     anim4_3d();
-  }else {
-
-
-
-
-  strokeWeight(3);
-  stroke("white");
-  fill(255,255,255,50);
-  noFill()
-  noStroke()
-  // emissiveMaterial(255, 0, 0, 50)
-
-
-  if (keyIsPressed === true) {
-    push()
-    rotateX(-locY/500);
-    rotateY(-locX/500)
-  }
-
-
-
-  for (var i = 0; i < selectedPoints.length; i++) {
-    push()
-    var opacity = frameCount*15 - i*100 - (step*100)
-
-    if (opacity < 0) {
-      opacity = 0;
-    }
-    fill(255, 255, 255, opacity)
-    stroke(`rgba(255,255,255,${opacity/255})`);
-    if (i != selectedPoints.length-1) {
-      line(selectedPoints[i].x, selectedPoints[i].y, selectedPoints[i].z, selectedPoints[i+1].x, selectedPoints[i+1].y, selectedPoints[i+1].z)
-    }
-    noStroke()
-    translate(selectedPoints[i].x, selectedPoints[i].y, selectedPoints[i].z)
-    sphere(7)
-    pop()
-  }
-
-  beginShape(TESS);
-  for (var i = 0; i < selectedPoints.length; i++) {
-    vertex(selectedPoints[i].x, selectedPoints[i].y, selectedPoints[i].z)
-  }
-  endShape();
-  push()
-  translate(-center.x, -center.y, -center.z)
-  pop();
   }
 
 }
@@ -185,7 +99,7 @@ function anim1_grid() {
 
     grid[i].display();
   }
-  if (frameCount*20 > 300 + (step+stepX)*50) {
+  if (frameCount*20 > 300 + (step+stepX)*20) {
     frameCount = 0;
     state = 2;
   }
@@ -211,7 +125,7 @@ function anim2_points() {
     ellipse(selectedPoints[i].x, selectedPoints[i].y, size)
   }
 
-  if (frameCount > 70) {
+  if (frameCount*15 > i*100 + 100) {
     frameCount = 0;
     state = 3;
   }
@@ -354,7 +268,24 @@ class GridPoint{
 function makeShape() {
   selectedPoints = []
   for (var i = 0; i < nPoint; i++) {
-    var tempPoint = gridPoints[Math.floor(Math.random()*gridPoints.length)];
+
+    var repeat = true;
+    var tempPoint;
+
+    while (repeat) {
+      tempPoint = gridPoints[round(random(gridPoints.length))];
+
+      var x = abs(tempPoint.x);
+      var y = abs(tempPoint.y);
+      var z = abs(tempPoint.z);
+      var p = abs((stepX/2 - shapePadding)* distance);
+      var py = abs((step/2 - shapePadding + 1)* distance);
+
+      if (x < p && z < p && y < py) {
+        repeat = false;
+      }
+    }
+
     selectedPoints.push(tempPoint);
   }
 
@@ -363,6 +294,7 @@ function makeShape() {
 
 function mouseClicked() {
   frameCount = 0;
+  state = 2;
   makeShape();
 }
 
