@@ -9,12 +9,9 @@ var grid = [];
 var selectedPoints = [];
 var center = {x: 0, y: 0, z:0};
 
-const step = 20;
-var stepX = 0;
-var distance = 80;
-const padding = 100;
+const step = 8;
+const distance = 80;
 const nPoint = 8;
-const radius = 5;
 
 var pointer;
 
@@ -23,10 +20,7 @@ var state = 1
 function setup() {
   setAttributes('antialias', true);
   frameRate(30)
-  let container = select('#canvasContainer');
-  var canvas = createCanvas(container.width,container.height, WEBGL)
-  canvas.parent('canvasContainer');
-
+  createCanvas(windowWidth,windowHeight, WEBGL)
   ortho(-width/2, width/2, -height/2, height/2, -3000, +3000)
   textFont(inconsolata);
   textSize(32);
@@ -62,18 +56,14 @@ function setup() {
 
   pointer = new Point(0,0)
 
-  let gridWidth = width - padding*2;
-  let gridHeight = height - padding*2;
-  distance = gridHeight / (step - 1);
-  stepx = round(gridWidth / distance + 1) - 1;
+  translate(-windowWidth/2,-windowHeight/2)
 
-
-  for (var i = -stepx/2; i <= stepx/2; i++) {
+  for (var i = -step/2; i <= step/2; i++) {
     for (var j = -step/2; j <= step/2; j++) {
       var time = i+j+step;
-      var g = new GridPoint(i*distance, j*distance, 0, time);
+      var g = new GridPoint(j*distance, i*distance, 0, time);
       grid.push(g)
-      for (var k = -stepx/2; k <= stepx/2; k++) {
+      for (var k = -step/2; k <= step/2; k++) {
         var point = new GridPoint(i*distance, j*distance, k*distance, i+j);
         gridPoints.push(point);
       }
@@ -86,6 +76,9 @@ function setup() {
 function draw() {
   // put drawing code here
   background('#CCCCCC');
+  fill('black')
+  text(frameCount, -width/2+20, -height/2 +50)
+  text("state: " + state, -width/2+20, -height/2 +100)
 
   let locX = mouseX - width / 2;
   let locY = mouseY - height / 2;
@@ -97,7 +90,7 @@ function draw() {
 
   pointer.update(locX, locY);
 
-  //orbitControl();
+  orbitControl();
   // beginShape(POINTS);
   // for (var i = 0; i < grid.length; i++) {
   //   push()
@@ -173,8 +166,8 @@ function draw() {
 
 function anim1_grid() {
   for (var i = 0; i < grid.length; i++) {
-    var opacity = frameCount*20 - grid[i].time*20 - 200
-    // var opacity = frameCount*20 - i*20 - 200
+    // var opacity = frameCount*20 - grid[i].time*50 - 200
+    var opacity = frameCount*20 - i*20 - 200
     // if (opacity < 150) {
     //   opacity = 0;
     // }else {
@@ -185,7 +178,7 @@ function anim1_grid() {
 
     grid[i].display();
   }
-  if (frameCount*20 > 300 + (step+stepX)*50) {
+  if (frameCount > 1.5*grid.length) {
     frameCount = 0;
     state = 2;
   }
@@ -322,7 +315,7 @@ function anim4_3d() {
   beginShape(TRIANGLE_STRIP)
   var opacity = frameCount*20 - 200
   opacity = map(opacity,0,500,0,80,true)
-  emissiveMaterial(255,255,255, opacity)
+  emissiveMaterial(255,255,255, 100)
   for (var i = 0; i < selectedPoints.length; i++) {
     vertex(selectedPoints[i].x, selectedPoints[i].y, selectedPoints[i].z)
   }
@@ -332,8 +325,7 @@ function anim4_3d() {
 }
 
 function windowResized() {
-  let container = select('#canvasContainer');
-  resizeCanvas(container.width,container.height, WEBGL)
+  resizeCanvas(windowWidth, windowHeight);
   ortho(-width/2, width/2, -height/2, height/2, -3000, +3000)
 }
 
@@ -347,17 +339,36 @@ class GridPoint{
     }
 
     display(){
-      ellipse(this.x, this.y, radius)
+      ellipse(this.x, this.y, 10)
     }
 }
 
 function makeShape() {
   selectedPoints = []
-  for (var i = 0; i < nPoint; i++) {
-    var tempPoint = gridPoints[Math.floor(Math.random()*gridPoints.length)];
+  // for (var i = 0; i < nPoint; i++) {
+  //   var tempPoint = gridPoints[Math.floor(Math.random()*gridPoints.length)];
+  //   selectedPoints.push(tempPoint);
+  // }
+  var seedX = random(0,100)
+  var seedY = random(0,100)
+  var seedZ = random(0,100)
+  noiseSeed(seedY)
+  for (var i = 0; i <= step; i++) {
+    noiseSeed(seedY)
+    var x = noise(i);
+    noiseSeed(seedZ)
+    var y = noise(i);
+    noiseSeed(seedZ)
+    var z = noise(i);
+
+    x = Math.round(map(x,0,1,-step/2,step/2,true)) * distance
+    y = Math.round(map(y,0,1,-step/2,step/2,true)) * distance
+    z = Math.round(map(z,0,1,-step/2,step/2,true)) * distance
+
+    var tempPoint = {x: x, y: y, z: z}
     selectedPoints.push(tempPoint);
   }
-
+  console.log(selectedPoints);
   center = findCenter(selectedPoints)
 }
 
